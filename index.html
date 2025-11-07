@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strix - Home</title>
+
+    <meta name="description" content="Strix – Stream your favorite movies and series. Explore trending and newly added content.">
+    <meta name="theme-color" content="#ff6b6b">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    
+    <style>
+        .home-page {
+            background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #0a0a0f 100%);
+            position: relative;
+        }
+        
+        .home-page::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255, 107, 107, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 107, 107, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .home-page .main-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .home-page .content-section {
+            position: relative;
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        
+        .home-page .content-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: calc(100% - 4rem);
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 107, 107, 0.3) 50%, transparent 100%);
+        }
+        
+        .home-page .content-section:first-child::before {
+            display: none;
+        }
+        
+        .home-page .section-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .home-page .section-heading {
+            display: inline-block;
+            position: relative;
+            padding: 0 2rem;
+        }
+        
+        .home-page .section-title {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .home-page .section-subtitle {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9375rem;
+            font-weight: 400;
+            letter-spacing: 0.02em;
+        }
+        
+        .home-page .recommendations-grid {
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 1rem;
+        }
+        
+        .home-page .footer {
+            margin-top: 4rem;
+            padding: 2rem 0;
+            border-top: 1px solid rgba(255, 107, 107, 0.2);
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+        }
+        
+        .home-page .footer-credit {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+        
+        @media (max-width: 768px) {
+            .home-page .content-section::before {
+                width: calc(100% - 2rem);
+            }
+            
+            .home-page .section-title {
+                font-size: 1.5rem;
+            }
+            
+            .home-page .section-subtitle {
+                font-size: 0.875rem;
+            }
+            
+            .home-page .recommendations-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+        }
+        
+        @media (min-width: 769px) and (max-width: 1200px) {
+            .home-page .recommendations-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+        
+        @media (min-width: 1201px) and (max-width: 1600px) {
+            .home-page .recommendations-grid {
+                grid-template-columns: repeat(8, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body class="home-page">
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="/" class="logo" aria-label="Strix Home">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img">
+                        <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" fill="url(#gradient)" stroke="currentColor" stroke-width="2"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="4" y1="4" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#ff6b6b"/>
+                                <stop offset="100%" stop-color="#ee5a6f"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>STRIX</span>
+                </a>
+                <div class="nav-links">
+                    <a href="/" class="nav-link active">Home</a>
+                    <a href="/series" class="nav-link">Series</a>
+                    <a href="/movies" class="nav-link">Movies</a>
+                </div>
+            </div>
+
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search..." aria-label="Search">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="M21 21L16.65 16.65"></path>
+                    </svg>
+                </div>
+                <button class="theme-picker-btn" id="themePickerBtn" aria-label="Change Theme"><i class="fas fa-palette"></i></button>
+                <button class="hamburger-menu" id="hamburgerMenu" aria-label="Open Menu"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-search-container">
+            <input type="text" class="search-input mobile-search-input" placeholder="Search..." aria-label="Search in mobile">
+        </div>
+    </div>
+
+    <!-- Theme Picker Modal -->
+    <div class="theme-picker-modal" id="themePickerModal" aria-hidden="true">
+        <div class="theme-picker-content">
+            <div class="theme-picker-header">
+                <h3>Choose Theme</h3>
+                <button class="theme-close-btn" id="themeCloseBtn" aria-label="Close Theme Picker"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="theme-options">
+                <button class="theme-option" data-theme="red" style="--theme-color: #ff6b6b;"><div class="theme-color"></div><span>Crimson</span></button>
+                <button class="theme-option" data-theme="blue" style="--theme-color: #4a9eff;"><div class="theme-color"></div><span>Ocean</span></button>
+                <button class="theme-option" data-theme="purple" style="--theme-color: #a855f7;"><div class="theme-color"></div><span>Purple</span></button>
+                <button class="theme-option" data-theme="green" style="--theme-color: #22c55e;"><div class="theme-color"></div><span>Emerald</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <section class="content-section">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-heading">
+                        <h2 class="section-title">Recently Added</h2>
+                        <p class="section-subtitle">Recently added titles to your library.</p>
+                    </div>
+                </div>
+                <div class="recommendations-grid" id="recentlyAddedGrid"></div>
+            </div>
+        </section>
+
+        <section class="content-section">
+            <div class="container">
+                <div class="section-header">
+                    <div class="section-heading">
+                        <h2 class="section-title">Trending Now</h2>
+                        <p class="section-subtitle">What everyone's streaming this week.</p>
+                    </div>
+                </div>
+                <div class="recommendations-grid" id="trendingGrid"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-credit">© 2025 Strix</p>
+                <div class="footer-links">
+                    <a href="/privacy" class="footer-link">Privacy</a>
+                    <a href="/terms" class="footer-link">Terms</a>
+                    <a href="/contact" class="footer-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive">
+        <span class="toast-message"></span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/app.js" defer></script>
+    <script src="/assets/js/script.js" defer></script>
+</body>
+</html>

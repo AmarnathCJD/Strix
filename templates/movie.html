@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}} - Strix</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        {{if .BackdropPath}}
+        body {
+            --backdrop-image: url('https://image.tmdb.org/t/p/original{{.BackdropPath}}');
+        }
+        {{end}}
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="/" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" fill="url(#gradient)" stroke="currentColor" stroke-width="2"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="4" y1="4" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#ff6b6b"/>
+                                <stop offset="100%" stop-color="#ee5a6f"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>STRIX</span>
+                </a>
+                <div class="nav-links">
+                    <a href="/" class="nav-link">Home</a>
+                    <a href="#" class="nav-link">Series</a>
+                    <a href="#" class="nav-link active">Movies</a>
+                    <a href="#" class="nav-link">My List</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search titles, actors...">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <!-- Search results dropdown will be added here by JS -->
+                </div>
+                <button class="theme-picker-btn" id="themePickerBtn" title="Change Theme">
+                    <i class="fas fa-palette"></i>
+                </button>
+                <button class="hamburger-menu" id="hamburgerMenu">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu (Search Only) -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-search-container">
+            <input type="text" class="search-input mobile-search-input" placeholder="Search movies, series, actors...">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Theme Picker Modal -->
+    <div class="theme-picker-modal" id="themePickerModal">
+        <div class="theme-picker-content">
+            <div class="theme-picker-header">
+                <h3>Choose Theme Color</h3>
+                <button class="theme-close-btn" id="themeCloseBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="theme-options">
+                <button class="theme-option" data-theme="red" style="--theme-color: #ff6b6b;">
+                    <div class="theme-color"></div>
+                    <span>Crimson</span>
+                </button>
+                <button class="theme-option" data-theme="blue" style="--theme-color: #4a9eff;">
+                    <div class="theme-color"></div>
+                    <span>Ocean</span>
+                </button>
+                <button class="theme-option" data-theme="purple" style="--theme-color: #a855f7;">
+                    <div class="theme-color"></div>
+                    <span>Purple</span>
+                </button>
+                <button class="theme-option" data-theme="green" style="--theme-color: #22c55e;">
+                    <div class="theme-color"></div>
+                    <span>Emerald</span>
+                </button>
+                <button class="theme-option" data-theme="orange" style="--theme-color: #f97316;">
+                    <div class="theme-color"></div>
+                    <span>Sunset</span>
+                </button>
+                <button class="theme-option" data-theme="pink" style="--theme-color: #ec4899;">
+                    <div class="theme-color"></div>
+                    <span>Rose</span>
+                </button>
+                <button class="theme-option" data-theme="cyan" style="--theme-color: #06b6d4;">
+                    <div class="theme-color"></div>
+                    <span>Cyan</span>
+                </button>
+                <button class="theme-option" data-theme="yellow" style="--theme-color: #eab308;">
+                    <div class="theme-color"></div>
+                    <span>Gold</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Backdrop -->
+    <div class="hero-backdrop">
+        {{if .BackdropPath}}
+        <img src="https://image.tmdb.org/t/p/original{{.BackdropPath}}" alt="{{.Title}} Backdrop" class="backdrop-img">
+        {{else}}
+        <img src="https://via.placeholder.com/1920x1080?text=No+Backdrop" alt="Backdrop" class="backdrop-img">
+        {{end}}
+        <div class="hero-gradient"></div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section with Poster -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <div class="hero-container hero-container-movie">
+                    <!-- Poster Left -->
+                    <div class="hero-poster">
+                        <div class="poster-container">
+                            {{if .PosterPath}}
+                            <img src="https://image.tmdb.org/t/p/original{{.PosterPath}}" alt="{{.Title}} Poster" class="poster-img">
+                            {{else}}
+                            <img src="https://via.placeholder.com/400x600?text=No+Poster" alt="Poster" class="poster-img">
+                            {{end}}
+                            <div class="poster-overlay">
+                                <button class="poster-play-btn">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Info Center -->
+                    <div class="hero-info">
+                        <div class="badge-group">
+                            {{if eq .Status "Released"}}
+                            <span class="badge badge-new">NOW AVAILABLE</span>
+                            {{else if eq .Status "Post Production"}}
+                            <span class="badge badge-new">COMING SOON</span>
+                            {{end}}
+                            <span class="badge badge-quality">HD</span>
+                        </div>
+                        <h1 class="hero-title">{{.Title}}</h1>
+                        <div class="meta-info">
+                            <div class="rating">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffd700">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                                <span class="rating-value">{{printf "%.1f" .VoteAverage}}</span>
+                                <span class="rating-source">TMDb</span>
+                            </div>
+                            <span class="meta-dot">•</span>
+                            {{if .ReleaseDate}}
+                            <span class="meta-item">{{index (split .ReleaseDate "-") 0}}</span>
+                            <span class="meta-dot">•</span>
+                            {{end}}
+                            {{if gt .Runtime 0}}
+                            <span class="meta-item">{{.Runtime}} min</span>
+                            <span class="meta-dot">•</span>
+                            {{end}}
+                            <span class="meta-item">{{.Status}}</span>
+                        </div>
+                        
+                        {{if .Tagline}}
+                        <p class="hero-tagline">"{{.Tagline}}"</p>
+                        {{end}}
+                        
+                        <p class="hero-description">{{.Overview}}</p>
+                        
+                        <div class="genre-tags">
+                            {{range .Genres}}
+                            <span class="genre-tag">{{.Name}}</span>
+                            {{end}}
+                        </div>
+                        
+                        <div class="hero-details">
+                            {{if .ProductionCountries}}
+                            <div class="detail-group">
+                                <span class="detail-label">Country:</span>
+                                <span class="detail-value">{{range $i, $c := .ProductionCountries}}{{if $i}}, {{end}}{{$c.Name}}{{end}}</span>
+                            </div>
+                            {{end}}
+                            {{if .Budget}}
+                            {{if gt .Budget 0}}
+                            <div class="detail-group">
+                                <span class="detail-label">Budget:</span>
+                                <span class="detail-value">${{.Budget}}</span>
+                            </div>
+                            {{end}}
+                            {{end}}
+                            {{if .Revenue}}
+                            {{if gt .Revenue 0}}
+                            <div class="detail-group">
+                                <span class="detail-label">Revenue:</span>
+                                <span class="detail-value">${{.Revenue}}</span>
+                            </div>
+                            {{end}}
+                            {{end}}
+                            {{if .ReleaseDate}}
+                            <div class="detail-group">
+                                <span class="detail-label">Release Date:</span>
+                                <span class="detail-value">{{.ReleaseDate}}</span>
+                            </div>
+                            {{end}}
+                        </div>
+                        
+                        <div class="hero-actions">
+                            <button class="btn btn-primary" id="playButton">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                Play Now
+                            </button>
+                            <button class="btn btn-secondary">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                My List
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Available Stream Files -->
+        <section class="files-section">
+            <div class="container">
+                <div class="files-header">
+                    <h2 class="section-title">Available Files</h2>
+                    <div class="quality-filter">
+                        <button class="filter-btn active" data-quality="all">All</button>
+                        <button class="filter-btn" data-quality="4k">4K UHD</button>
+                        <button class="filter-btn" data-quality="1080p">1080p</button>
+                        <button class="filter-btn" data-quality="720p">720p</button>
+                    </div>
+                </div>
+                <div class="files-grid" id="filesGrid">
+                    <!-- Files will be loaded via JavaScript -->
+                    <p style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 2rem;">Loading files...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- More Like This Section -->
+        <section class="recommendations-section">
+            <div class="container">
+                <h2 class="section-title">More Like This</h2>
+                <div class="recommendations-grid" id="recommendationsGrid">
+                    <!-- Recommendations will be loaded via JavaScript -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-copyright">&copy; 2025 Strix. All rights reserved.</p>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <svg class="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span class="toast-message">Action completed successfully</span>
+    </div>
+
+    <!-- Pass data to JavaScript -->
+    <script>
+        window.mediaData = {
+            id: {{.ID}},
+            type: 'movie',
+            title: '{{.Title}}',
+            imdbId: '{{.ExternalIDs.IMDbID}}'
+        };
+    </script>
+
+    <!-- Scripts -->
+    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/script.js"></script>
+</body>
+</html>

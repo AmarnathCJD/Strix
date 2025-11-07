@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strix - Your Ultimate Streaming Destination</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-left">
+                <a href="/" class="logo">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 4L28 10V22L16 28L4 22V10L16 4Z" fill="url(#gradient)" stroke="currentColor" stroke-width="2"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="4" y1="4" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#ff6b6b"/>
+                                <stop offset="100%" stop-color="#ee5a6f"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span>STRIX</span>
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="nav-link active">Home</a>
+                    <a href="#" class="nav-link">Series</a>
+                    <a href="#" class="nav-link">Movies</a>
+                    <a href="#" class="nav-link">My List</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="Search titles, actors...">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </div>
+                <button class="theme-picker-btn" id="themePickerBtn" title="Change Theme">
+                    <i class="fas fa-palette"></i>
+                </button>
+                <button class="hamburger-menu" id="hamburgerMenu">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu (Search Only) -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-search-container">
+            <input type="text" class="search-input mobile-search-input" placeholder="Search movies, series, actors...">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Theme Picker Modal -->
+    <div class="theme-picker-modal" id="themePickerModal">
+        <div class="theme-picker-content">
+            <div class="theme-picker-header">
+                <h3>Choose Theme Color</h3>
+                <button class="theme-close-btn" id="themeCloseBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="theme-options">
+                <button class="theme-option" data-theme="red" style="--theme-color: #ff6b6b;">
+                    <div class="theme-color"></div>
+                    <span>Crimson</span>
+                </button>
+                <button class="theme-option" data-theme="blue" style="--theme-color: #4a9eff;">
+                    <div class="theme-color"></div>
+                    <span>Ocean</span>
+                </button>
+                <button class="theme-option" data-theme="purple" style="--theme-color: #a855f7;">
+                    <div class="theme-color"></div>
+                    <span>Purple</span>
+                </button>
+                <button class="theme-option" data-theme="green" style="--theme-color: #22c55e;">
+                    <div class="theme-color"></div>
+                    <span>Emerald</span>
+                </button>
+                <button class="theme-option" data-theme="orange" style="--theme-color: #f97316;">
+                    <div class="theme-color"></div>
+                    <span>Sunset</span>
+                </button>
+                <button class="theme-option" data-theme="pink" style="--theme-color: #ec4899;">
+                    <div class="theme-color"></div>
+                    <span>Rose</span>
+                </button>
+                <button class="theme-option" data-theme="cyan" style="--theme-color: #06b6d4;">
+                    <div class="theme-color"></div>
+                    <span>Cyan</span>
+                </button>
+                <button class="theme-option" data-theme="yellow" style="--theme-color: #eab308;">
+                    <div class="theme-color"></div>
+                    <span>Gold</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section with Poster -->
+        <section class="hero-section">
+            <div class="hero-backdrop">
+                <img src="https://images.unsplash.com/photo-1574267432644-f02b5ab7e2c3?w=1920&q=80" alt="Series Backdrop" class="backdrop-img">
+                <div class="hero-gradient"></div>
+            </div>
+            <div class="hero-content">
+                <div class="hero-container">
+                    <!-- Poster Left -->
+                    <div class="hero-poster">
+                        <div class="poster-container">
+                            <img src="https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=400&q=80" alt="Stranger Things Poster" class="poster-img">
+                            <div class="poster-overlay">
+                                <button class="poster-play-btn">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Info Center -->
+                    <div class="hero-info">
+                        <div class="badge-group">
+                            <span class="badge badge-new">NEW SEASON</span>
+                            <span class="badge badge-quality">4K Ultra HD</span>
+                        </div>
+                        <h1 class="hero-title">Stranger Things</h1>
+                        <div class="meta-info">
+                            <div class="rating">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="#ffd700">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                                <span class="rating-value">8.7</span>
+                                <span class="rating-source">IMDb</span>
+                            </div>
+                            <span class="meta-dot">•</span>
+                            <span class="meta-item">2016</span>
+                            <span class="meta-dot">•</span>
+                            <span class="meta-item">4 Seasons</span>
+                            <span class="meta-dot">•</span>
+                            <span class="meta-item">TV-14</span>
+                        </div>
+                        <p class="hero-description">
+                            When a young boy disappears, his mother, a police chief and his friends must confront terrifying supernatural forces in order to get him back. Set in 1980s Indiana, a small town becomes the center of strange occurrences and government conspiracies.
+                        </p>
+                        <div class="hero-details">
+                            <div class="detail-group">
+                                <span class="detail-label">Starring:</span>
+                                <span class="detail-value">Millie Bobby Brown, Finn Wolfhard, Winona Ryder, David Harbour</span>
+                            </div>
+                            <div class="detail-group">
+                                <span class="detail-label">Creators:</span>
+                                <span class="detail-value">The Duffer Brothers</span>
+                            </div>
+                            <div class="detail-group">
+                                <span class="detail-label">Production:</span>
+                                <span class="detail-value">21 Laps Entertainment, Netflix</span>
+                            </div>
+                            <div class="detail-group">
+                                <span class="detail-label">Country:</span>
+                                <span class="detail-value">United States</span>
+                            </div>
+                            <div class="detail-group">
+                                <span class="detail-label">Release Date:</span>
+                                <span class="detail-value">July 15, 2016</span>
+                            </div>
+                        </div>
+                        <div class="hero-actions">
+                            <button class="btn btn-primary">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M8 5v14l11-7z"/>
+                                </svg>
+                                Play Season 4
+                            </button>
+                            <button class="btn btn-secondary">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 5v14M5 12h14"/>
+                                </svg>
+                                My List
+                            </button>
+                            <button class="btn btn-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Episodes Quick List Right -->
+                    <div class="hero-episodes">
+                        <div class="hero-episodes-header">
+                            <h3 class="hero-episodes-title">Season 4 Episodes</h3>
+                            <select id="heroSeason" class="hero-season-select">
+                                <option value="1">S1</option>
+                                <option value="2">S2</option>
+                                <option value="3">S3</option>
+                                <option value="4" selected>S4</option>
+                            </select>
+                        </div>
+                        <div class="hero-episodes-list" id="heroEpisodesList">
+                            <!-- Episode Items -->
+                            <div class="hero-episode-item">
+                                <div class="hero-ep-thumb">
+                                    <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=200&q=80" alt="Ep 1">
+                                    <div class="hero-ep-play">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="hero-ep-info">
+                                    <span class="hero-ep-num">1</span>
+                                    <span class="hero-ep-title">The Hellfire Club</span>
+                                    <span class="hero-ep-duration">77m</span>
+                                </div>
+                            </div>
+                            
+                            <div class="hero-episode-item">
+                                <div class="hero-ep-thumb">
+                                    <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=200&q=80" alt="Ep 2">
+                                    <div class="hero-ep-play">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="hero-ep-info">
+                                    <span class="hero-ep-num">2</span>
+                                    <span class="hero-ep-title">Vecna's Curse</span>
+                                    <span class="hero-ep-duration">78m</span>
+                                </div>
+                            </div>
+                            
+                            <div class="hero-episode-item">
+                                <div class="hero-ep-thumb">
+                                    <img src="https://images.unsplash.com/photo-1574267432644-f02b5ab7e2c3?w=200&q=80" alt="Ep 3">
+                                    <div class="hero-ep-play">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="hero-ep-info">
+                                    <span class="hero-ep-num">3</span>
+                                    <span class="hero-ep-title">The Monster and...</span>
+                                    <span class="hero-ep-duration">63m</span>
+                                </div>
+                            </div>
+                            
+                            <div class="hero-episode-item">
+                                <div class="hero-ep-thumb">
+                                    <img src="https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=200&q=80" alt="Ep 4">
+                                    <div class="hero-ep-play">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="hero-ep-info">
+                                    <span class="hero-ep-num">4</span>
+                                    <span class="hero-ep-title">Dear Billy</span>
+                                    <span class="hero-ep-duration">78m</span>
+                                </div>
+                            </div>
+                            
+                            <div class="hero-episode-item">
+                                <div class="hero-ep-thumb">
+                                    <img src="https://images.unsplash.com/photo-1616530940355-351fabd9524b?w=200&q=80" alt="Ep 5">
+                                    <div class="hero-ep-play">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="hero-ep-info">
+                                    <span class="hero-ep-num">5</span>
+                                    <span class="hero-ep-title">The Nina Project</span>
+                                    <span class="hero-ep-duration">75m</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Available Stream Files -->
+        <section class="files-section">
+            <div class="container">
+                <div class="files-header">
+                    <h2 class="section-title">Available Files</h2>
+                    <div class="quality-filter">
+                        <button class="filter-btn active" data-quality="all">All</button>
+                        <button class="filter-btn" data-quality="4k">4K UHD</button>
+                        <button class="filter-btn" data-quality="1080p">1080p</button>
+                        <button class="filter-btn" data-quality="720p">720p</button>
+                    </div>
+                </div>
+
+                <!-- Files Grid -->
+                <div class="files-grid" id="filesGrid">
+                    <!-- File Card -->
+                    <div class="file-card" data-quality="4k">
+                        <div class="file-thumb">
+                            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300&q=80" alt="S4E1">
+                            <div class="file-quality-badge quality-4k">4K UHD</div>
+                        </div>
+                        <div class="file-details">
+                            <h4 class="file-name">Stranger.Things.S04E01.2160p.WEB-DL.mkv</h4>
+                            <div class="file-meta">
+                                <span class="file-size">8.2 GB</span>
+                                <span class="file-format">MKV</span>
+                                <span class="file-duration">77 min</span>
+                            </div>
+                            <div class="file-specs">
+                                <span class="spec-badge">HEVC</span>
+                                <span class="spec-badge">HDR10</span>
+                                <span class="spec-badge">Atmos</span>
+                                <span class="spec-badge">5.1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="file-card" data-quality="1080p">
+                        <div class="file-thumb">
+                            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300&q=80" alt="S4E1">
+                            <div class="file-quality-badge quality-1080p">1080p</div>
+                        </div>
+                        <div class="file-details">
+                            <h4 class="file-name">Stranger.Things.S04E01.1080p.WEB-DL.mkv</h4>
+                            <div class="file-meta">
+                                <span class="file-size">3.8 GB</span>
+                                <span class="file-format">MKV</span>
+                                <span class="file-duration">77 min</span>
+                            </div>
+                            <div class="file-specs">
+                                <span class="spec-badge">H.264</span>
+                                <span class="spec-badge">DD+</span>
+                                <span class="spec-badge">5.1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="file-card" data-quality="720p">
+                        <div class="file-thumb">
+                            <img src="https://images.unsplash.com/photo-1485846234645-a62644f84728?w=300&q=80" alt="S4E1">
+                            <div class="file-quality-badge quality-720p">720p</div>
+                        </div>
+                        <div class="file-details">
+                            <h4 class="file-name">Stranger.Things.S04E01.720p.WEB-DL.mkv</h4>
+                            <div class="file-meta">
+                                <span class="file-size">1.6 GB</span>
+                                <span class="file-format">MKV</span>
+                                <span class="file-duration">77 min</span>
+                            </div>
+                            <div class="file-specs">
+                                <span class="spec-badge">H.264</span>
+                                <span class="spec-badge">AAC</span>
+                                <span class="spec-badge">2.0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="file-card" data-quality="4k">
+                        <div class="file-thumb">
+                            <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&q=80" alt="S4E2">
+                            <div class="file-quality-badge quality-4k">4K UHD</div>
+                        </div>
+                        <div class="file-details">
+                            <h4 class="file-name">Stranger.Things.S04E02.2160p.WEB-DL.mkv</h4>
+                            <div class="file-meta">
+                                <span class="file-size">8.5 GB</span>
+                                <span class="file-format">MKV</span>
+                                <span class="file-duration">78 min</span>
+                            </div>
+                            <div class="file-specs">
+                                <span class="spec-badge">HEVC</span>
+                                <span class="spec-badge">HDR10</span>
+                                <span class="spec-badge">Atmos</span>
+                                <span class="spec-badge">5.1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="file-card" data-quality="1080p">
+                        <div class="file-thumb">
+                            <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&q=80" alt="S4E2">
+                            <div class="file-quality-badge quality-1080p">1080p</div>
+                        </div>
+                        <div class="file-details">
+                            <h4 class="file-name">Stranger.Things.S04E02.1080p.WEB-DL.mkv</h4>
+                            <div class="file-meta">
+                                <span class="file-size">3.9 GB</span>
+                                <span class="file-format">MKV</span>
+                                <span class="file-duration">78 min</span>
+                            </div>
+                            <div class="file-specs">
+                                <span class="spec-badge">H.264</span>
+                                <span class="spec-badge">DD+</span>
+                                <span class="spec-badge">5.1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="file-card" data-quality="720p">
+                        <div class="file-thumb">
+                            <img src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&q=80" alt="S4E2">
+                            <div class="file-quality-badge quality-720p">720p</div>
+                        </div>
+                        <div class="file-details">
+                            <h4 class="file-name">Stranger.Things.S04E02.720p.WEB-DL.mkv</h4>
+                            <div class="file-meta">
+                                <span class="file-size">1.7 GB</span>
+                                <span class="file-format">MKV</span>
+                                <span class="file-duration">78 min</span>
+                            </div>
+                            <div class="file-specs">
+                                <span class="spec-badge">H.264</span>
+                                <span class="spec-badge">AAC</span>
+                                <span class="spec-badge">2.0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- More Like This Section -->
+        <section class="recommendations-section">
+            <div class="container">
+                <h2 class="section-title">More Like This</h2>
+                <div class="recommendations-grid" id="recommendationsGrid">
+                    <!-- Loading Spinner -->
+                    <div class="loading-spinner">
+                        <div class="spinner"></div>
+                        <p class="loading-text">Loading recommendations...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <p class="footer-copyright">&copy; 2025 Strix</p>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Privacy</a>
+                    <a href="#" class="footer-link">Terms</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <svg class="toast-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span class="toast-message">Action completed successfully</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/script.js"></script>
+</body>
+</html>
