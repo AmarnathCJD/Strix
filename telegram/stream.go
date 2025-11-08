@@ -1,6 +1,7 @@
 package telegram
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/amarnathcjd/gogram"
 	tg "github.com/amarnathcjd/gogram/telegram"
@@ -183,9 +185,10 @@ func StreamMediaChunks(chatID int64, messageID int, startChunk int64, callback f
 	chunkSize := int64(1024 * 1024)
 	offset := startChunk * chunkSize
 	fileSize := doc.Size
+	maxRetries := 5
+	currentRetries := 0
 
 	for offset < fileSize {
-
 		limit := chunkSize
 		remaining := fileSize - offset
 
@@ -196,16 +199,29 @@ func StreamMediaChunks(chatID int64, messageID int, startChunk int64, callback f
 		alignedOffset := (offset / 1024) * 1024
 		alignedLimit := max(min(((limit+1023)/1024)*1024, 1048576), 1024)
 
-		result, err := requester.MakeRequest(&tg.UploadGetFileParams{
-			Location: location,
-			Offset:   alignedOffset,
-			Limit:    int32(alignedLimit),
-			Precise:  true,
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+
+		result, err := requester.MakeRequestCtx(ctx, &tg.UploadGetFileParams{
+			Location:     location,
+			Offset:       alignedOffset,
+			Limit:        int32(alignedLimit),
+			Precise:      true,
+			CdnSupported: false,
 		})
 
+		cancel()
+
 		if err != nil {
-			return fmt.Errorf("telegram fetch failed at offset %d: %w", offset, err)
+			currentRetries++
+			if currentRetries > maxRetries {
+				return fmt.Errorf("telegram fetch failed after %d retries at offset %d: %w", maxRetries, offset, err)
+			}
+			backoffDuration := time.Duration(100*(1<<(currentRetries-1))) * time.Millisecond
+			time.Sleep(backoffDuration)
+			continue
 		}
+
+		currentRetries = 0
 
 		file, ok := result.(*tg.UploadFileObj)
 		if !ok {

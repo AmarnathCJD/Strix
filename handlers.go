@@ -421,7 +421,15 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	bytesSent := int64(0)
 	currentChunk := startChunk
 
+	clientContext := r.Context()
+
 	err = telegram.StreamMediaChunks(req.ChatID, req.MessageID, startChunk, func(chunkData []byte) error {
+		select {
+		case <-clientContext.Done():
+			return io.EOF
+		default:
+		}
+
 		chunkToSend := chunkData
 
 		if currentChunk == startChunk {
@@ -454,7 +462,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 		if len(chunkToSend) > 0 {
 			n, err := w.Write(chunkToSend)
 			if err != nil {
-				return err
+				return io.EOF
 			}
 			bytesSent += int64(n)
 

@@ -14,6 +14,7 @@ type Config struct {
 	GeminiAPIKey string
 	Port         string
 	FilesDir     string
+	BaseURL      string
 
 	AppID    int
 	AppHash  string
@@ -40,6 +41,7 @@ func Load() *Config {
 		GeminiAPIKey: getEnv("GEMINI_API_KEY", ""),
 		Port:         getEnv("PORT", "8080"),
 		FilesDir:     getEnv("FILES_DIR", "./media"),
+		BaseURL:      getEnv("BASE_URL", "https://placeholder.com"),
 		AppHash:      getEnv("APP_HASH", ""),
 		BotToken:     getEnv("BOT_TOKEN", ""),
 		MongoURL:     getEnv("MONGO_URL", "mongodb://localhost:27017"),

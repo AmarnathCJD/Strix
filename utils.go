@@ -209,3 +209,29 @@ func formatBytes(bytes int64) string {
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
 }
+
+func extractCodec(filename string) string {
+	codecPatterns := []struct {
+		pattern *regexp.Regexp
+		name    string
+	}{
+		{regexp.MustCompile(`(?i)\b(x265|H\.?265|HEVC)\b`), "HEVC"},
+		{regexp.MustCompile(`(?i)\b(x264|H\.?264|AVC)\b`), "AVC"},
+		{regexp.MustCompile(`(?i)\b(10bit|10-bit)\b`), "10bit"},
+		{regexp.MustCompile(`(?i)\b(8bit|8-bit)\b`), "8bit"},
+		{regexp.MustCompile(`(?i)\b(VP9)\b`), "VP9"},
+		{regexp.MustCompile(`(?i)\b(AV1)\b`), "AV1"},
+	}
+
+	codecs := []string{}
+	for _, cp := range codecPatterns {
+		if cp.pattern.MatchString(filename) {
+			codecs = append(codecs, cp.name)
+		}
+	}
+
+	if len(codecs) > 0 {
+		return strings.Join(codecs, " ")
+	}
+	return ""
+}

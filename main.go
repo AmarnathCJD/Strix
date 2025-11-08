@@ -34,6 +34,7 @@ func main() {
 
 	telegram.ParseFilenameFunc = parseFilename
 	telegram.IsVideoFileFunc = isVideoFile
+	telegram.ExtractCodecFunc = extractCodec
 	telegram.GeminiAPIKey = cfg.GeminiAPIKey
 
 	if err := telegram.InitBot(cfg, db); err != nil {
