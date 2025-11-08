@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	tmdbBaseURL  = "https://api.themoviedb.org/3"
-	tmdbImageURL = "https://image.tmdb.org/t/p"
+	tmdbBaseURL = "https://api.themoviedb.org/3"
 )
 
 type Server struct {

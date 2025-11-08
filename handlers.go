@@ -8,15 +8,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
-	"time"
 
 	"strix/telegram"
 
 	"github.com/gorilla/mux"
 )
-
-// TMDB API Handlers
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
@@ -149,7 +147,6 @@ func (s *Server) handleListFiles(w http.ResponseWriter, r *http.Request) {
 	limit := 50
 	offset := 0
 
-	// Parse limit from query params
 	if limitParam := r.URL.Query().Get("limit"); limitParam != "" {
 		fmt.Sscanf(limitParam, "%d", &limit)
 	}
@@ -327,55 +324,161 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	// log.Printf("[STREAM] Request - Token: %s, Range: %s, Method: %s",
-	// 	token, r.Header.Get("Range"), r.Method)
-
 	req, err := telegram.ParseStreamToken(token)
 	if err != nil {
-		log.Printf("[STREAM] ERROR: Invalid token: %v", err)
-		http.Error(w, "invalid token", http.StatusBadRequest)
+		log.Printf("[STREAM] Invalid token")
+		http.Error(w, "Invalid or missing token", http.StatusUnauthorized)
 		return
 	}
 
-	telegramFile, err := telegram.NewTelegramFile(req.ChatID, req.MessageID)
+	fileInfo, err := telegram.GetMediaInfo(req.ChatID, req.MessageID)
 	if err != nil {
-		log.Printf("[STREAM] ERROR: Failed to create TelegramFile: %v", err)
-		http.Error(w, "failed to access file", http.StatusInternalServerError)
+		log.Printf("[STREAM] Media not found")
+		http.Error(w, "No media found", http.StatusNotFound)
 		return
 	}
 
-	// fileSize := telegramFile.GetSize()
-	mimeType := telegramFile.GetMimeType()
+	fileSize := fileInfo.Size
+	fileName := fileInfo.FileName
+	mimeType := fileInfo.MimeType
 
-	// log.Printf("[STREAM] File info - Size: %d bytes (%.2f MB), MimeType: %s",
-	// 	fileSize, float64(fileSize)/(1024*1024), mimeType)
+	displayName := fileName
+	if len(displayName) > 40 {
+		displayName = displayName[:37] + "..."
+	}
 
-	// Set headers before ServeContent
-	w.Header().Set("Content-Type", mimeType)
-	w.Header().Set("Accept-Ranges", "bytes")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Range")
-	w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Range")
-	w.Header().Set("Cache-Control", "public, max-age=3600")
-
-	// Handle preflight
 	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Range")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	// ServeContent handles:
-	// - Range request parsing
-	// - HEAD requests
-	// - Conditional requests (If-Modified-Since, etc.)
-	// - Proper status codes (200, 206, 416)
-	// - Content-Length and Content-Range headers
-	// Behind the scenes, it will call Read() and Seek() on TelegramFile
-	// which fetches chunks from Telegram on-demand
-	http.ServeContent(w, r, "", time.Time{}, telegramFile)
+	var start, end int64
+	var status int
+	rangeHeader := r.Header.Get("Range")
 
-	log.Printf("[STREAM] Completed")
+	if rangeHeader != "" {
+		rangeStr := strings.TrimPrefix(rangeHeader, "bytes=")
+		parts := strings.Split(rangeStr, "-")
+
+		if parts[0] != "" {
+			start, _ = strconv.ParseInt(parts[0], 10, 64)
+		}
+
+		if len(parts) > 1 && parts[1] != "" {
+			end, _ = strconv.ParseInt(parts[1], 10, 64)
+		} else {
+			end = fileSize - 1
+		}
+
+		if start >= fileSize || end >= fileSize || start > end {
+			w.Header().Set("Content-Range", fmt.Sprintf("bytes */%d", fileSize))
+			http.Error(w, "Requested Range Not Satisfiable", http.StatusRequestedRangeNotSatisfiable)
+			return
+		}
+		status = http.StatusPartialContent
+	} else {
+		start = 0
+		end = fileSize - 1
+		status = http.StatusOK
+	}
+
+	contentLength := end - start + 1
+
+	rangeDisplay := rangeHeader
+	if rangeDisplay == "" {
+		rangeDisplay = "full"
+	}
+	log.Printf("[STREAM] %s | %s", displayName, rangeDisplay)
+
+	w.Header().Set("Content-Type", mimeType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, fileName))
+	w.Header().Set("Accept-Ranges", "bytes")
+	w.Header().Set("Content-Length", strconv.FormatInt(contentLength, 10))
+	w.Header().Set("Cache-Control", "public, max-age=31536000")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Expose-Headers", "Content-Length,Content-Range")
+
+	if status == http.StatusPartialContent {
+		w.Header().Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
+	}
+
+	if r.Method == http.MethodHead {
+		w.WriteHeader(status)
+		return
+	}
+
+	w.WriteHeader(status)
+
+	chunkSize := int64(1024 * 1024)
+	startChunk := start / chunkSize
+	endChunk := end / chunkSize
+	offsetInFirstChunk := start % chunkSize
+	bytesInLastChunk := (end % chunkSize) + 1
+
+	bytesSent := int64(0)
+	currentChunk := startChunk
+
+	err = telegram.StreamMediaChunks(req.ChatID, req.MessageID, startChunk, func(chunkData []byte) error {
+		chunkToSend := chunkData
+
+		if currentChunk == startChunk {
+			if int64(len(chunkToSend)) > offsetInFirstChunk {
+				chunkToSend = chunkToSend[offsetInFirstChunk:]
+			} else {
+				currentChunk++
+				return nil
+			}
+		}
+
+		if currentChunk == endChunk {
+			if currentChunk == startChunk {
+
+				if int64(len(chunkToSend)) > bytesInLastChunk-offsetInFirstChunk {
+					chunkToSend = chunkToSend[:bytesInLastChunk-offsetInFirstChunk]
+				}
+			} else {
+
+				if int64(len(chunkToSend)) > bytesInLastChunk {
+					chunkToSend = chunkToSend[:bytesInLastChunk]
+				}
+			}
+		}
+
+		if bytesSent+int64(len(chunkToSend)) > contentLength {
+			chunkToSend = chunkToSend[:contentLength-bytesSent]
+		}
+
+		if len(chunkToSend) > 0 {
+			n, err := w.Write(chunkToSend)
+			if err != nil {
+				return err
+			}
+			bytesSent += int64(n)
+
+			if flusher, ok := w.(http.Flusher); ok {
+				flusher.Flush()
+			}
+		}
+
+		currentChunk++
+
+		if bytesSent >= contentLength || currentChunk > endChunk {
+			return io.EOF
+		}
+
+		return nil
+	})
+
+	if err != nil && err != io.EOF {
+		if !strings.Contains(err.Error(), "broken pipe") &&
+			!strings.Contains(err.Error(), "connection reset") {
+			log.Printf("[STREAM] ✗ Error streaming %s", displayName)
+		}
+		return
+	}
 }
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
@@ -386,7 +489,6 @@ func (s *Server) handleTVPage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	// Fetch TV details from TMDB
 	url := fmt.Sprintf("%s/tv/%s?api_key=%s&append_to_response=credits,videos,recommendations,external_ids",
 		tmdbBaseURL, id, s.config.TMDBAPIKey)
 
@@ -403,7 +505,6 @@ func (s *Server) handleTVPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Render the template with TV details
 	funcMap := template.FuncMap{
 		"split": strings.Split,
 	}
@@ -426,7 +527,6 @@ func (s *Server) handleMoviePage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	// Fetch movie details from TMDB
 	url := fmt.Sprintf("%s/movie/%s?api_key=%s&append_to_response=credits,videos,recommendations,external_ids",
 		tmdbBaseURL, id, s.config.TMDBAPIKey)
 
@@ -443,7 +543,6 @@ func (s *Server) handleMoviePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Render the template with movie details
 	funcMap := template.FuncMap{
 		"split": strings.Split,
 	}
@@ -470,7 +569,6 @@ func (s *Server) handleStreamPage(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "templates/stream.html")
 }
 
-// Helper function to check if CORS headers should be added
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -486,7 +584,6 @@ func enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-// Logging middleware
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s %s", r.RemoteAddr, r.Method, r.URL.Path)

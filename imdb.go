@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Handler to fetch IMDB rating by IMDB ID
 func (s *Server) handleIMDBRating(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	imdbID := vars["imdb_id"]
@@ -26,7 +25,6 @@ func (s *Server) handleIMDBRating(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rating)
 }
 
-// Scrape IMDB rating from IMDB website
 func scrapeIMDBRating(imdbID string) IMDBRating {
 	url := fmt.Sprintf("https://www.imdb.com/title/%s/", imdbID)
 
@@ -36,7 +34,6 @@ func scrapeIMDBRating(imdbID string) IMDBRating {
 		return IMDBRating{Error: "Failed to create request"}
 	}
 
-	// Set user agent to avoid being blocked
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
@@ -47,13 +44,11 @@ func scrapeIMDBRating(imdbID string) IMDBRating {
 	}
 	defer resp.Body.Close()
 
-	// Parse HTML with goquery
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		return IMDBRating{Error: "Failed to parse HTML"}
 	}
 
-	// Extract JSON-LD structured data
 	jsonMeta := doc.Find("script[type='application/ld+json']").First().Text()
 	if jsonMeta == "" {
 		return IMDBRating{Error: "JSON-LD data not found"}
@@ -67,7 +62,6 @@ func scrapeIMDBRating(imdbID string) IMDBRating {
 	var rating float64 = 0.0
 	var votes float64 = 0.0
 
-	// Extract rating from aggregateRating
 	if jsonObj["aggregateRating"] != nil {
 		aggregateRating := jsonObj["aggregateRating"].(map[string]any)
 		if aggregateRating["ratingValue"] != nil {
@@ -90,7 +84,6 @@ func scrapeIMDBRating(imdbID string) IMDBRating {
 	return IMDBRating{Error: "Rating not found"}
 }
 
-// Format votes number from float (e.g., 1234567 -> 1.2M)
 func formatVotesFromFloat(votes float64) string {
 	if votes == 0 {
 		return "N/A"
@@ -103,7 +96,6 @@ func formatVotesFromFloat(votes float64) string {
 	return fmt.Sprintf("%.0f", votes)
 }
 
-// Format votes number (e.g., 1234567 -> 1.2M)
 func formatVotes(votes string) string {
 	if len(votes) >= 7 {
 		return votes[:len(votes)-6] + "." + votes[len(votes)-6:len(votes)-5] + "M"
@@ -113,7 +105,6 @@ func formatVotes(votes string) string {
 	return votes
 }
 
-// Alternative: Format with commas
 func formatVotesWithCommas(votes string) string {
 	n := len(votes)
 	if n <= 3 {

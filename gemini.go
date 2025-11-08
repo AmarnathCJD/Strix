@@ -109,7 +109,6 @@ Rules:
 	if err := json.NewDecoder(resp.Body).Decode(&geminiResp); err != nil {
 		return nil, err
 	}
-	fmt.Println(geminiResp)
 
 	if len(geminiResp.Candidates) == 0 || len(geminiResp.Candidates[0].Content.Parts) == 0 {
 		return nil, fmt.Errorf("no response from gemini")
