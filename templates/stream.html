@@ -1,719 +1,707 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Stream - Strix</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Strix Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <link
+      href="https://unpkg.com/@videojs/themes@1/dist/forest/index.css"
+      rel="stylesheet"
+    />
+    <script src="assets/js/ffmpeg.js"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+      /* Reset & base setup */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0a0a0a;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+      }
+
+      /* Player container fix */
+      .video-js {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* Ensure video stays within bounds */
+      #player {
+        object-fit: contain;
+      }
+
+      /* Desktop specific fixes */
+      @media (min-width: 768px) {
+        .video-js {
+          max-height: calc(100vh - 80px) !important;
         }
-
-        body {
-            background: #000;
-            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        .stream-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background: #000;
-            position: relative;
-        }
-
-        /* Floating controls */
-        .floating-controls {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            display: flex;
-            gap: 0.5rem;
-            z-index: 1000;
-            opacity: 1;
-            transition: opacity 0.3s ease;
-        }
-
-        .floating-controls.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .back-btn {
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            width: 40px;
-            height: 40px;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 1000;
-            transition: all 0.2s ease;
-            opacity: 1;
-        }
-
-        .back-btn.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .back-btn:hover {
-            background: rgba(255, 107, 107, 0.2);
-            border-color: rgba(255, 107, 107, 0.4);
-            transform: scale(1.05);
-        }
-
-        .ctrl-btn {
-            width: 40px;
-            height: 40px;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 10px;
-            color: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .ctrl-btn:hover {
-            background: rgba(255, 107, 107, 0.2);
-            border-color: rgba(255, 107, 107, 0.4);
-            transform: scale(1.05);
-        }
-
-        .ctrl-btn.active {
-            background: rgba(255, 107, 107, 0.25);
-            border-color: rgba(255, 107, 107, 0.5);
-        }
-
-        .ctrl-btn.success {
-            background: rgba(81, 207, 102, 0.25);
-            border-color: rgba(81, 207, 102, 0.5);
-        }
-
-        .ctrl-btn.success {
-            background: rgba(81, 207, 102, 0.3);
-            border-color: rgba(81, 207, 102, 0.5);
-        }
-
-        /* Video player wrapper */
-        .player-wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 100vw;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .player-container {
-            width: 100%;
-            flex: 1;
-            background: #000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 0;
-        }
-
-        .plyr {
-            width: 100%;
-            height: 100%;
-            --plyr-color-main: #ff6b6b;
-        }
-
-        .plyr video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        /* Bottom info bar - within viewport */
-        .info-bar {
-            width: 100%;
-            background: rgba(28, 28, 30, 0.98);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 0.625rem 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            z-index: 999;
-            transition: opacity 0.3s ease;
-            flex-shrink: 0;
-        }
-
-        .info-bar.hidden {
-            opacity: 0;
-        }
-
-        .file-info {
-            display: flex;
-            align-items: center;
-            gap: 0.625rem;
-            flex: 1;
-            min-width: 0;
-        }
-
-        .file-name {
-            font-size: 0.813rem;
-            color: rgba(255, 255, 255, 0.85);
-            font-weight: 500;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .quality-badge {
-            padding: 0.25rem 0.5rem;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
-            border-radius: 6px;
-            color: white;
-            font-size: 0.688rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-        }
-
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #000;
-            z-index: 2000;
-            transition: opacity 0.3s ease;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loader {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #ff6b6b;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .loading-text {
-            margin-top: 1.5rem;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.938rem;
-            font-weight: 500;
-        }
-
-        /* Stats overlay */
-        .stats-panel {
-            position: fixed;
-            top: 5rem;
-            left: 1.5rem;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(30px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.25rem;
-            z-index: 999;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            min-width: 200px;
-        }
-
-        .stats-panel.visible {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .stat-item:last-child {
-            border-bottom: none;
-        }
-
-        .stat-label {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.813rem;
-        }
-
-        .stat-value {
-            color: #ff6b6b;
-            font-weight: 700;
-            font-size: 0.813rem;
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            top: 5rem;
-            right: 1.5rem;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            color: white;
-            font-size: 0.875rem;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            transform: translateX(400px);
-            transition: transform 0.4s ease;
-            z-index: 2001;
-        }
-
-        .toast.show {
-            transform: translateX(0);
-        }
-
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-
-            .back-btn,
-            .ctrl-btn {
-                width: 40px;
-                height: 40px;
-            }
-
-            .floating-controls {
-                top: 1rem;
-                right: 1rem;
-                gap: 0.5rem;
-            }
-
-            .back-btn {
-                top: 1rem;
-                left: 1rem;
-            }
-
-            .info-bar {
-                padding: 0.625rem 1rem;
-                font-size: 0.75rem;
-            }
-
-            .file-name {
-                font-size: 0.75rem;
-            }
-
-            .stats-panel {
-                top: 4rem;
-                left: 1rem;
-                right: 1rem;
-                font-size: 0.75rem;
-            }
-
-            .toast {
-                top: 4rem;
-                left: 1rem;
-                right: 1rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-
-            .back-btn,
-            .ctrl-btn {
-                width: 36px;
-                height: 36px;
-                border-radius: 10px;
-            }
-        }
+      }
     </style>
-</head>
-
-<body>
-    <div class="stream-container">
-        <!-- Loading screen -->
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loader"></div>
-            <div class="loading-text">Loading stream...</div>
-        </div>
-
-        <!-- Back button -->
-        <button class="back-btn" id="backBtn" onclick="goBack()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-        </button>
-
-        <!-- Floating controls -->
-        <div class="floating-controls" id="floatingControls">
-            <button class="ctrl-btn" id="statsBtn" onclick="toggleStats()" title="Stats">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                </svg>
-            </button>
-            <button class="ctrl-btn" id="pipBtn" onclick="togglePIP()" title="Picture in Picture">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2" />
-                    <rect x="13" y="11" width="7" height="5" rx="1" />
-                </svg>
-            </button>
-            <button class="ctrl-btn" id="copyUrlBtn" onclick="copyUrl()" title="Copy URL">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-            </button>
-        </div>
-
-        <!-- Stats panel -->
-        <div class="stats-panel" id="statsPanel">
-            <div class="stat-item">
-                <span class="stat-label">Resolution</span>
-                <span class="stat-value" id="resolution">--</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Buffer</span>
-                <span class="stat-value" id="bufferHealth">0%</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Speed</span>
-                <span class="stat-value" id="playbackRate">1.0x</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">FPS</span>
-                <span class="stat-value" id="fps">--</span>
-            </div>
-        </div>
-
-        <!-- Video player -->
-        <div class="player-wrapper">
-            <div class="player-container">
-                <video id="videoPlayer" playsinline controls>
-                    <source id="videoSource" src="" type="video/mp4" />
-                </video>
-            </div>
-
-            <!-- Bottom info bar (NOT floating) -->
-            <div class="info-bar" id="infoBar">
-                <div class="file-info">
-                    <span class="file-name" id="fileName">Loading...</span>
-                    <div class="quality-badge" id="qualityBadge">HD</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Toast -->
-        <div class="toast" id="toast">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span id="toastMsg">Success</span>
-        </div>
+  </head>
+  <body>
+    <!-- Loading Screen -->
+    <div
+      id="loadingScreen"
+      class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black"
+    >
+      <div class="spinner mb-4"></div>
+      <p class="text-white text-sm">Loading...</p>
     </div>
 
-    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <!-- Main Player Container -->
+    <div class="relative w-screen h-screen flex flex-col">
+      <!-- Top Bar -->
+      <div
+        id="topBar"
+        class="absolute top-0 left-0 right-0 z-30 fade-controls bg-black/80"
+        style="height: 56px;"
+      >
+        <div
+          class="flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3"
+        >
+          <!-- Back Button -->
+          <button
+            onclick="handleBack()"
+            class="flex items-center justify-center gap-2 px-3 py-2 bg-white/10 rounded-lg text-white text-sm hover:bg-white/20 transition-colors"
+          >
+            <i class="fas fa-arrow-left text-sm"></i>
+            <span class="hidden sm:inline">Back</span>
+          </button>
+
+          <!-- Title -->
+          <div class="hidden sm:flex items-center gap-2 flex-1 min-w-0 mx-3">
+            <div class="flex items-center justify-center w-8 h-8 bg-blue-500/20 rounded-lg flex-shrink-0">
+              <i class="fas fa-file-video text-blue-400 text-sm"></i>
+            </div>
+            <span class="text-white text-xs sm:text-sm truncate" id="fileName"
+              >Loading...</span
+            >
+          </div>
+
+          <!-- Quality Badge & Actions -->
+          <div class="flex items-center gap-2">
+            <button
+              onclick="openInVLC()"
+              title="Open in VLC"
+              class="hidden sm:flex items-center justify-center gap-1.5 h-9 px-3 bg-orange-600 hover:bg-orange-700 rounded-lg text-white text-xs font-medium transition-colors"
+            >
+              <i class="fas fa-play-circle text-sm"></i>
+              <span>VLC</span>
+            </button>
+            <span
+              class="flex items-center justify-center text-white text-xs font-medium bg-blue-600 h-9 px-3 rounded-lg flex-shrink-0"
+              id="qualityBadge"
+              >HD</span
+            >
+            <button
+              onclick="toggleStats()"
+              id="statsBtn"
+              title="Stats"
+              class="w-9 h-9 bg-white/10 rounded-lg text-white hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <i class="fas fa-chart-bar text-sm"></i>
+            </button>
+            <button
+              onclick="copyStreamUrl()"
+              title="Copy"
+              class="w-9 h-9 bg-white/10 rounded-lg text-white hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <i class="fas fa-link text-sm"></i>
+            </button>
+            <button
+              onclick="downloadStream()"
+              title="Download"
+              class="hidden sm:flex w-9 h-9 bg-white/10 rounded-lg text-white hover:bg-white/20 items-center justify-center transition-colors"
+            >
+              <i class="fas fa-download text-sm"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Panel -->
+      <div
+        id="statsPanel"
+        class="absolute top-16 left-3 z-30 bg-black/90 rounded-lg p-3 w-60 opacity-0 invisible transition-all duration-300"
+      >
+        <div
+          class="flex items-center justify-between mb-3 pb-2 border-b border-white/10"
+        >
+          <span class="text-white text-sm font-medium">Stats</span>
+          <button
+            onclick="toggleStats()"
+            class="w-6 h-6 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+          >
+            <i class="fas fa-times text-sm"></i>
+          </button>
+        </div>
+
+        <div class="space-y-2.5 text-xs">
+          <div class="flex justify-between items-center">
+            <span class="text-white/60">Resolution</span>
+            <span class="text-white font-medium" id="resolution">--</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-white/60">Buffer</span>
+            <span class="text-white font-medium" id="bufferHealth">0%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-white/60">Speed</span>
+            <span class="text-white font-medium" id="playbackSpeed">1.0x</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-white/60">FPS</span>
+            <span class="text-white font-medium" id="fps">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Player -->
+      <div class="flex-1 flex items-center justify-center bg-black overflow-hidden" style="height: calc(100vh - 56px); padding: 10px;">
+        <video
+          id="player"
+          class="video-js vjs-theme-forest vjs-big-play-centered"
+          controls
+          preload="auto"
+          crossorigin="anonymous"
+          style="max-height: 100%; max-width: 100%;"
+        >
+          <source id="videoSource" src="" type="video/mp4" />
+        </video>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="fixed top-4 right-4 z-50 bg-black/90 rounded-lg px-4 py-2.5 opacity-0 invisible transition-all duration-300 shadow-xl"
+    >
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center w-5 h-5 flex-shrink-0">
+          <i id="toastIcon" class="fas fa-check text-green-500 text-sm"></i>
+        </div>
+        <span class="text-white text-sm" id="toastMsg">Success</span>
+      </div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get("token");
-        let player;
-        let hideTimeout;
-        let fpsCounter = 0;
-        let lastFpsTime = performance.now();
+      // Configuration
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+      let player;
+      let hideControlsTimeout;
+      let fpsCounter = 0;
+      let lastFpsTime = performance.now();
 
-        if (!token) {
-            showToast("No stream token provided");
-            setTimeout(() => window.history.back(), 2000);
+      // Check token
+      if (!token) {
+        showToast("No token provided", "error");
+        setTimeout(() => window.history.back(), 2000);
+      } else {
+        initializePlayer();
+      }
+
+      // Browser and Codec Detection
+      function detectBrowserAndCodecs() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isChrome = /chrome|chromium|crios/i.test(userAgent) && !/edg/i.test(userAgent);
+        const isFirefox = /firefox|fxios/i.test(userAgent);
+        const isSafari = /safari/i.test(userAgent) && !/chrome|chromium|crios/i.test(userAgent);
+        const isEdge = /edg/i.test(userAgent);
+        
+        // Test EAC3 support
+        const video = document.createElement('video');
+        const supportsEAC3 = video.canPlayType('audio/mp4; codecs="ec-3"') !== '';
+        const supportsAC3 = video.canPlayType('audio/mp4; codecs="ac-3"') !== '';
+        
+        return {
+          isChrome,
+          isFirefox,
+          isSafari,
+          isEdge,
+          supportsEAC3,
+          supportsAC3,
+          browserName: isChrome ? 'Chrome' : isFirefox ? 'Firefox' : isSafari ? 'Safari' : isEdge ? 'Edge' : 'Unknown'
+        };
+      }
+
+      // Show codec warning banner
+      function showCodecWarning(detection) {
+        if (!detection.supportsEAC3 && !detection.supportsAC3) {
+          const warningBanner = document.createElement('div');
+          warningBanner.id = 'codecWarning';
+          warningBanner.className = 'fixed top-16 left-4 bg-yellow-600/90 text-white px-3 py-2.5 rounded-lg shadow-lg z-40 text-xs max-w-xs';
+          warningBanner.innerHTML = `
+            <div class="flex items-center gap-2.5">
+              <div class="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-sm"></i>
+              </div>
+              <span class="flex-1">Audio may not play. Try VLC or Edge.</span>
+              <button onclick="document.getElementById('codecWarning').remove()" class="w-5 h-5 flex items-center justify-center text-white/80 hover:text-white transition-colors">
+                <i class="fas fa-times text-sm"></i>
+              </button>
+            </div>
+          `;
+          document.body.appendChild(warningBanner);
+          
+          // Auto-hide after 8 seconds
+          setTimeout(() => {
+            if (warningBanner && warningBanner.parentNode) {
+              warningBanner.style.opacity = '0';
+              warningBanner.style.transition = 'opacity 0.3s';
+              setTimeout(() => warningBanner.remove(), 300);
+            }
+          }, 8000);
+        }
+      }
+
+      // Initialize Player
+      function initializePlayer() {
+        const streamUrl = `/stream/${token}`;
+        const fileName = urlParams.get("file") || "stream.mp4";
+
+        document.getElementById("fileName").textContent = fileName;
+        document.getElementById("videoSource").src = streamUrl;
+        
+        // Detect browser capabilities
+        const detection = detectBrowserAndCodecs();
+        console.log('Browser detection:', detection);
+        
+        // Show warning if EAC3 not supported
+        if (!detection.supportsEAC3 && !detection.supportsAC3) {
+          console.warn(`${detection.browserName} may not support EAC3/AC3 audio codecs`);
+          showCodecWarning(detection);
         } else {
-            initPlayer();
+          console.log(`✓ ${detection.browserName} supports advanced audio codecs`);
         }
 
-        function initPlayer() {
-            const streamUrl = `/stream/${token}`;
-            const fullUrl = window.location.origin + streamUrl;
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const filename = urlParams.get("file") || `stream_${token}.mp4`;
-
-            document.getElementById("fileName").textContent = filename;
-            document.getElementById("videoSource").src = streamUrl;
-            document.getElementById("videoPlayer").load();
-
-            player = new Plyr("#videoPlayer", {
-                controls: [
-                    "play-large",
-                    "play",
-                    "progress",
-                    "current-time",
-                    "duration",
-                    "mute",
-                    "volume",
-                    "settings",
-                    "fullscreen",
-                ],
-                settings: ["quality", "speed", "loop"],
-                ratio: "16:9",
-                autoplay: false,
-                keyboard: { focused: true, global: true },
-            });
-
-            player.on("ready", () => {
-                hideLoading();
-                const video = document.getElementById("videoPlayer");
-                updateQuality(video);
-                trackFPS(video);
-            });
-
-            player.on("play", () => {
-                startAutoHide();
-            });
-
-            player.on("pause", () => {
-                showControls();
-                clearTimeout(hideTimeout);
-            });
-
-            player.on("ratechange", () => {
-                document.getElementById("playbackRate").textContent =
-                    player.speed + "x";
-            });
-
-            player.on("progress", () => {
-                const buffered = player.buffered;
-                if (buffered > 0) {
-                    const health = Math.min(100, (buffered / player.duration) * 100);
-                    document.getElementById("bufferHealth").textContent =
-                        health.toFixed(0) + "%";
-                }
-            });
-
-            const video = document.getElementById("videoPlayer");
-            video.addEventListener("loadedmetadata", () => {
-                updateQuality(video);
-            });
-
-            document.addEventListener("mousemove", handleMouseMove);
-            document.addEventListener("click", handleMouseMove);
-        }
-
-        function updateQuality(video) {
-            const height = video.videoHeight;
-            const width = video.videoWidth;
-
-            document.getElementById(
-                "resolution"
-            ).textContent = `${width}x${height}`;
-
-            const badge = document.getElementById("qualityBadge");
-            if (height >= 2160) badge.textContent = "4K";
-            else if (height >= 1440) badge.textContent = "2K";
-            else if (height >= 1080) badge.textContent = "FHD";
-            else if (height >= 720) badge.textContent = "HD";
-            else badge.textContent = "SD";
-        }
-
-        function trackFPS(video) {
-            function countFrame() {
-                if (video.paused || video.ended) {
-                    requestAnimationFrame(countFrame);
-                    return;
-                }
-
-                const now = performance.now();
-                fpsCounter++;
-
-                if (now - lastFpsTime >= 1000) {
-                    document.getElementById("fps").textContent = fpsCounter + " fps";
-                    fpsCounter = 0;
-                    lastFpsTime = now;
-                }
-
-                requestAnimationFrame(countFrame);
-            }
-            requestAnimationFrame(countFrame);
-        }
-
-        function handleMouseMove() {
-            showControls();
-            if (player && !player.paused) {
-                startAutoHide();
-            }
-        }
-
-        function showControls() {
-            document.getElementById("backBtn").classList.remove("hidden");
-            document.getElementById("floatingControls").classList.remove("hidden");
-            document.getElementById("infoBar").classList.remove("hidden");
-            document.body.style.cursor = "default";
-        }
-
-        function hideControls() {
-            if (player && !player.paused) {
-                document.getElementById("backBtn").classList.add("hidden");
-                document.getElementById("floatingControls").classList.add("hidden");
-                document.getElementById("infoBar").classList.add("hidden");
-                document.body.style.cursor = "none";
-            }
-        }
-
-        function startAutoHide() {
-            clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(hideControls, 3000);
-        }
-
-        function hideLoading() {
-            document.getElementById("loadingOverlay").classList.add("hidden");
-        }
-
-        function toggleStats() {
-            const panel = document.getElementById("statsPanel");
-            const btn = document.getElementById("statsBtn");
-            panel.classList.toggle("visible");
-            btn.classList.toggle("active");
-        }
-
-        function togglePIP() {
-            if (player) {
-                player.pip = !player.pip;
-            }
-        }
-
-        function goBack() {
-            if (player) player.pause();
-            window.history.back();
-        }
-
-        function copyUrl() {
-            const streamUrl = `/stream/${token}`;
-            const fullUrl = window.location.origin + streamUrl;
-            const btn = document.getElementById("copyUrlBtn");
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard
-                    .writeText(fullUrl)
-                    .then(() => {
-                        btn.classList.add("success");
-                        showToast("URL copied to clipboard");
-                        setTimeout(() => btn.classList.remove("success"), 2000);
-                    })
-                    .catch(() => {
-                        fallbackCopy(fullUrl, btn);
-                    });
-            } else {
-                fallbackCopy(fullUrl, btn);
-            }
-        }
-
-        function fallbackCopy(text, btn) {
-            const textarea = document.createElement("textarea");
-            textarea.value = text;
-            textarea.style.position = "fixed";
-            textarea.style.opacity = "0";
-            document.body.appendChild(textarea);
-            textarea.select();
-
-            try {
-                document.execCommand("copy");
-                btn.classList.add("success");
-                showToast("URL copied to clipboard");
-                setTimeout(() => btn.classList.remove("success"), 2000);
-            } catch (err) {
-                showToast("Failed to copy URL");
-            }
-
-            document.body.removeChild(textarea);
-        }
-
-        function downloadVideo() {
-            const streamUrl = `/stream/${token}`;
-            const filename = document.getElementById("fileName").textContent;
-            const link = document.createElement("a");
-            link.href = streamUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast("Download started");
-        }
-
-        function showToast(message) {
-            const toast = document.getElementById("toast");
-            document.getElementById("toastMsg").textContent = message;
-            toast.classList.add("show");
-            setTimeout(() => toast.classList.remove("show"), 3000);
-        }
-
-        document.addEventListener("keydown", (e) => {
-            if (!player) return;
-
-            switch (e.key) {
-                case " ":
-                case "k":
-                    e.preventDefault();
-                    player.togglePlay();
-                    break;
-                case "f":
-                    e.preventDefault();
-                    player.fullscreen.toggle();
-                    break;
-                case "m":
-                    e.preventDefault();
-                    player.muted = !player.muted;
-                    break;
-                case "ArrowLeft":
-                    e.preventDefault();
-                    player.rewind(10);
-                    break;
-                case "ArrowRight":
-                    e.preventDefault();
-                    player.forward(10);
-                    break;
-                case "ArrowUp":
-                    e.preventDefault();
-                    player.increaseVolume(0.1);
-                    break;
-                case "ArrowDown":
-                    e.preventDefault();
-                    player.decreaseVolume(0.1);
-                    break;
-                case "i":
-                    e.preventDefault();
-                    toggleStats();
-                    break;
-            }
+        player = videojs("player", {
+          fluid: true,
+          responsive: true,
+          controls: true,
+          preload: "auto",
+          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 2],
+          aspectRatio: "16:9",
+          fill: false,
+          html5: {
+            nativeTextTracks: true,
+            nativeAudioTracks: true,
+            nativeVideoTracks: true,
+          },
+          textTrackSettings: true,
         });
-    </script>
-</body>
 
+        // Player Events
+        player.ready(function () {
+          hideLoadingScreen();
+          updateVideoInfo();
+          startFPSCounter();
+          
+          <!-- Check for audio playback issues
+          player.on('error', function() {
+            const error = player.error();
+            if (error) {
+              console.error('Player error:', error);
+              const detection = detectBrowserAndCodecs();
+              
+              let errorMessage = '';
+              let suggestions = '';
+              
+              if (error.code === 4) {
+                // Media not supported - show subtle warning
+                const subtleWarning = document.createElement('div');
+                subtleWarning.className = 'fixed bottom-20 left-4 bg-gray-800/95 text-white px-3 py-2.5 rounded-lg shadow-lg z-40 text-xs max-w-xs backdrop-blur-sm';
+                subtleWarning.innerHTML = `
+                  <div class="flex items-center gap-2.5">
+                    <div class="flex items-center justify-center w-5 h-5 flex-shrink-0">
+                      <i class="fas fa-volume-mute text-sm opacity-70"></i>
+                    </div>
+                    <span class="flex-1 opacity-90">Audio may not play. Try VLC.</span>
+                    <button onclick="this.parentElement.parentElement.remove()" class="w-5 h-5 flex items-center justify-center text-white/60 hover:text-white transition-colors">
+                      <i class="fas fa-times text-sm"></i>
+                    </button>
+                  </div>
+                `;
+                document.body.appendChild(subtleWarning);
+                
+                setTimeout(() => {
+                  if (subtleWarning && subtleWarning.parentNode) {
+                    subtleWarning.style.opacity = '0';
+                    subtleWarning.style.transition = 'opacity 0.3s';
+                    setTimeout(() => subtleWarning.remove(), 300);
+                  }
+                }, 6000);
+              } else if (error.code === 2) {
+                // Network error
+                errorMessage = 'Network error';
+                suggestions = 'Check your connection and try refreshing the page.';
+              } else if (error.code === 3) {
+                // Decode error
+                errorMessage = 'Decoding error';
+                suggestions = 'The video file may be corrupted or incompatible.';
+              } else {
+                errorMessage = 'Playback error';
+                suggestions = 'Try refreshing the page or downloading the file.';
+              }
+              
+              if (errorMessage && error.code !== 4) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-4 rounded-lg shadow-2xl z-50 max-w-md mx-4';
+                errorDiv.innerHTML = `
+                  <div class="flex items-start gap-3">
+                    <i class="fas fa-exclamation-circle text-xl flex-shrink-0 mt-0.5"></i>
+                    <div class="flex-1">
+                      <div class="font-semibold mb-1">${errorMessage}</div>
+                      <div class="text-sm opacity-90">${suggestions}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="text-white/80 hover:text-white">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                `;
+                document.body.appendChild(errorDiv);
+                
+                // Auto-hide after 8 seconds
+                setTimeout(() => {
+                  if (errorDiv && errorDiv.parentNode) {
+                    errorDiv.style.opacity = '0';
+                    errorDiv.style.transition = 'opacity 0.3s';
+                    setTimeout(() => errorDiv.remove(), 300);
+                  }
+                }, 8000);
+              }
+            }
+          });
+          
+          // Enable captions if available
+          const tracks = player.textTracks();
+          if (tracks.length > 0) {
+            for (let i = 0; i < tracks.length; i++) {
+              if (tracks[i].kind === 'subtitles' || tracks[i].kind === 'captions') {
+                tracks[i].mode = 'showing';
+                break;
+              }
+            }
+          }
+        });
+
+        player.on("play", () => {
+          startAutoHideControls();
+        });
+
+        player.on("pause", () => {
+          showControls();
+          clearTimeout(hideControlsTimeout);
+        });
+
+        player.on("ratechange", () => {
+          document.getElementById("playbackSpeed").textContent =
+            player.playbackRate() + "x";
+        });
+
+        player.on("progress", () => {
+          updateBufferHealth();
+        });
+
+        player.on("loadedmetadata", () => {
+          updateVideoInfo();
+        });
+
+        // Mouse movement handling
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("touchstart", handleMouseMove);
+      }
+
+      // Update video info
+      function updateVideoInfo() {
+        const video = player.tech({ IWillNotUseThisInPlugins: true }).el();
+        if (!video) return;
+
+        const width = video.videoWidth;
+        const height = video.videoHeight;
+        document.getElementById(
+          "resolution"
+        ).textContent = `${width}x${height}`;
+
+        // Update quality badge
+        const badge = document.getElementById("qualityBadge");
+        if (height >= 2160) badge.textContent = "4K";
+        else if (height >= 1440) badge.textContent = "2K";
+        else if (height >= 1080) badge.textContent = "FHD";
+        else if (height >= 720) badge.textContent = "HD";
+        else badge.textContent = "SD";
+      }
+
+      // FPS Counter
+      function startFPSCounter() {
+        const video = player.tech({ IWillNotUseThisInPlugins: true }).el();
+
+        function countFrames() {
+          if (!player.paused() && !player.ended()) {
+            const now = performance.now();
+            fpsCounter++;
+
+            if (now - lastFpsTime >= 1000) {
+              document.getElementById("fps").textContent = fpsCounter + " fps";
+              fpsCounter = 0;
+              lastFpsTime = now;
+            }
+          }
+          requestAnimationFrame(countFrames);
+        }
+
+        requestAnimationFrame(countFrames);
+      }
+
+      // Buffer health
+      function updateBufferHealth() {
+        if (!player) return;
+        const buffered = player.bufferedPercent();
+        if (buffered > 0) {
+          const health = Math.min(100, buffered * 100);
+          document.getElementById("bufferHealth").textContent =
+            health.toFixed(0) + "%";
+        }
+      }
+
+      // Controls visibility
+      function handleMouseMove() {
+        showControls();
+        if (player && !player.paused) {
+          startAutoHideControls();
+        }
+      }
+
+      function showControls() {
+        document.getElementById("topBar").classList.remove("hidden");
+        document.body.style.cursor = "default";
+      }
+
+      function hideControls() {
+        if (player && !player.paused) {
+          document.getElementById("topBar").classList.add("hidden");
+          document.body.style.cursor = "none";
+        }
+      }
+
+      function startAutoHideControls() {
+        clearTimeout(hideControlsTimeout);
+        hideControlsTimeout = setTimeout(hideControls, 3000);
+      }
+
+      // Loading screen
+      function hideLoadingScreen() {
+        const screen = document.getElementById("loadingScreen");
+        screen.style.opacity = "0";
+        setTimeout(() => (screen.style.display = "none"), 500);
+      }
+
+      // Toggle stats
+      function toggleStats() {
+        const panel = document.getElementById("statsPanel");
+        const btn = document.getElementById("statsBtn");
+        const isVisible = panel.style.opacity === "1";
+
+        if (isVisible) {
+          panel.style.opacity = "0";
+          panel.style.visibility = "hidden";
+          btn.classList.remove("text-indigo-400");
+        } else {
+          panel.style.opacity = "1";
+          panel.style.visibility = "visible";
+          btn.classList.add("text-indigo-400");
+        }
+      }
+
+      // PIP
+      function togglePIP() {
+        if (player && player.requestPictureInPicture) {
+          player.requestPictureInPicture();
+        }
+      }
+
+      // Back
+      function handleBack() {
+        if (player) player.pause();
+        window.history.back();
+      }
+
+      // Copy URL
+      function copyStreamUrl() {
+        const url = window.location.origin + `/stream/${token}`;
+
+        if (navigator.clipboard) {
+          navigator.clipboard
+            .writeText(url)
+            .then(() => {
+              showToast("Stream URL copied!", "success");
+            })
+            .catch(() => {
+              fallbackCopyText(url);
+            });
+        } else {
+          fallbackCopyText(url);
+        }
+      }
+
+      function fallbackCopyText(text) {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+
+        try {
+          document.execCommand("copy");
+          showToast("Stream URL copied!", "success");
+        } catch (err) {
+          showToast("Failed to copy", "error");
+        }
+
+        document.body.removeChild(textarea);
+      }
+
+      // Download
+      function downloadStream() {
+        const url = `/stream/${token}`;
+        const fileName = document.getElementById("fileName").textContent;
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast("Download started!", "success");
+      }
+
+      // Open in VLC
+      function openInVLC() {
+        const streamUrl = window.location.origin + `/stream/${token}`;
+        // Fix VLC URL format - needs proper http:// prefix
+        const vlcUrl = `vlc://${streamUrl.replace('http://', '').replace('https://', '')}`;
+        
+        // Try to open VLC protocol
+        window.location.href = vlcUrl;
+        
+        // Show helpful message
+        showToast("Opening in VLC...", "info");
+        
+        // Fallback: copy URL for manual opening
+        setTimeout(() => {
+          const fallbackDiv = document.createElement('div');
+          fallbackDiv.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-2xl z-50 max-w-md mx-4';
+          fallbackDiv.innerHTML = `
+            <div class="flex items-start gap-3">
+              <i class="fas fa-info-circle text-blue-400 text-lg flex-shrink-0 mt-0.5"></i>
+              <div class="flex-1 text-sm">
+                <div class="font-semibold mb-1">VLC Not Opening?</div>
+                <div class="text-xs opacity-90 mb-2">Copy the URL and open it manually in VLC:</div>
+                <div class="bg-black/50 px-2 py-1 rounded text-xs font-mono break-all mb-2">${streamUrl}</div>
+                <button onclick="copyStreamUrl(); this.parentElement.parentElement.parentElement.remove();" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs">
+                  Copy URL
+                </button>
+              </div>
+              <button onclick="this.parentElement.parentElement.remove()" class="text-white/80 hover:text-white">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+          document.body.appendChild(fallbackDiv);
+          
+          setTimeout(() => {
+            if (fallbackDiv && fallbackDiv.parentNode) {
+              fallbackDiv.style.opacity = '0';
+              fallbackDiv.style.transition = 'opacity 0.3s';
+              setTimeout(() => fallbackDiv.remove(), 300);
+            }
+          }, 10000);
+        }, 2000);
+      }
+
+      // Toast notification
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        const toastMsg = document.getElementById("toastMsg");
+        const toastIcon = document.getElementById("toastIcon");
+
+        toastMsg.textContent = message;
+
+        if (type === "success") {
+          toastIcon.className = "fas fa-check text-green-500 text-sm";
+        } else if (type === "error") {
+          toastIcon.className = "fas fa-times text-red-500 text-sm";
+        } else if (type === "info") {
+          toastIcon.className = "fas fa-info-circle text-blue-500 text-sm";
+        }
+
+        toast.style.opacity = "1";
+        toast.style.visibility = "visible";
+
+        setTimeout(() => {
+          toast.style.opacity = "0";
+          toast.style.visibility = "hidden";
+        }, 3000);
+      }
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (!player) return;
+
+        switch (e.key) {
+          case " ":
+          case "k":
+            e.preventDefault();
+            if (player.paused()) player.play();
+            else player.pause();
+            break;
+          case "f":
+            e.preventDefault();
+            if (player.isFullscreen()) player.exitFullscreen();
+            else player.requestFullscreen();
+            break;
+          case "m":
+            e.preventDefault();
+            player.muted(!player.muted());
+            break;
+          case "ArrowLeft":
+            e.preventDefault();
+            player.currentTime(player.currentTime() - 10);
+            break;
+          case "ArrowRight":
+            e.preventDefault();
+            player.currentTime(player.currentTime() + 10);
+            break;
+          case "ArrowUp":
+            e.preventDefault();
+            player.volume(Math.min(1, player.volume() + 0.1));
+            break;
+          case "ArrowDown":
+            e.preventDefault();
+            player.volume(Math.max(0, player.volume() - 0.1));
+            break;
+          case "i":
+            e.preventDefault();
+            toggleStats();
+            break;
+        }
+      });
+    </script>
+  </body>
 </html>

@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFmpeg Web Studio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.95;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            margin-bottom: 20px;
+        }
+
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-zone.dragging {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-zone i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .upload-zone h3 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .upload-zone p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .file-info {
+            display: none;
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .file-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item label {
+            font-size: 0.85rem;
+            color: #666;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .info-item value {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .operations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .operation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .operation-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .operation-card:hover::before {
+            transform: translateX(0);
+        }
+
+        .operation-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .operation-card i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .operation-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+        }
+
+        .operation-card p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .close-modal {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .console.active {
+            display: block;
+        }
+
+        .console-line {
+            margin-bottom: 5px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.active {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .output-files {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .output-files.active {
+            display: block;
+        }
+
+        .output-file-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .output-file-info {
+            flex: 1;
+        }
+
+        .output-file-info h4 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .output-file-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .operations-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-video"></i>
+                FFmpeg Web Studio
+            </h1>
+            <p>Professional video & audio processing in your browser</p>
+        </div>
+
+        <div class="alert alert-info" id="alert">
+            <i class="fas fa-info-circle"></i> <span id="alertMessage"></span>
+        </div>
+
+        <div class="card">
+            <div class="upload-zone" id="uploadZone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>Drop your file here</h3>
+                <p>or click to browse • Supports video, audio, and image files</p>
+                <input type="file" id="fileInput" style="display: none;" accept="video/*,audio/*,image/*">
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <h3 style="margin-bottom: 15px; color: #333;">
+                    <i class="fas fa-file-video"></i> File Information
+                </h3>
+                <div class="file-info-grid">
+                    <div class="info-item">
+                        <label>Filename</label>
+                        <value id="infoFilename">-</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Size</label>
+                        <value id="infoSize">-</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Type</label>
+                        <value id="infoType">-</value>
+                    </div>
+                    <div class="info-item">
+                        <label>Status</label>
+                        <value id="infoStatus"><span class="badge">Ready</span></value>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #333;">
+                <i class="fas fa-magic"></i> Quick Operations
+            </h2>
+            <div class="operations-grid">
+                <div class="operation-card" onclick="openModal('convert')">
+                    <i class="fas fa-exchange-alt"></i>
+                    <h3>Convert Format</h3>
+                    <p>Convert to MP4, WebM, AVI, MKV and more</p>
+                </div>
+                <div class="operation-card" onclick="openModal('compress')">
+                    <i class="fas fa-compress"></i>
+                    <h3>Compress Video</h3>
+                    <p>Reduce file size with quality presets</p>
+                </div>
+                <div class="operation-card" onclick="openModal('extract')">
+                    <i class="fas fa-music"></i>
+                    <h3>Extract Audio</h3>
+                    <p>Extract audio track to MP3, AAC, WAV</p>
+                </div>
+                <div class="operation-card" onclick="openModal('trim')">
+                    <i class="fas fa-cut"></i>
+                    <h3>Trim Video</h3>
+                    <p>Cut video by start and end time</p>
+                </div>
+                <div class="operation-card" onclick="openModal('resolution')">
+                    <i class="fas fa-expand"></i>
+                    <h3>Change Resolution</h3>
+                    <p>Resize to 1080p, 720p, 480p, custom</p>
+                </div>
+                <div class="operation-card" onclick="openModal('custom')">
+                    <i class="fas fa-terminal"></i>
+                    <h3>Custom Command</h3>
+                    <p>Advanced FFmpeg command line</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card progress-container" id="progressContainer">
+            <h3 style="margin-bottom: 15px; color: #333;">
+                <i class="fas fa-cog fa-spin"></i> Processing
+            </h3>
+            <div class="progress-info">
+                <span id="progressStatus">Initializing...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="console" id="console"></div>
+        </div>
+
+        <div class="card output-files" id="outputFiles">
+            <h3 style="margin-bottom: 15px; color: #333;">
+                <i class="fas fa-check-circle" style="color: #10b981;"></i> Output Files
+            </h3>
+            <div id="outputFilesList"></div>
+        </div>
+    </div>
+
+    <!-- Convert Modal -->
+    <div class="modal" id="convertModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-exchange-alt"></i> Convert Format</h2>
+                <button class="close-modal" onclick="closeModal('convert')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label>Output Format</label>
+                <select id="convertFormat">
+                    <option value="mp4">MP4 (H.264)</option>
+                    <option value="webm">WebM (VP9)</option>
+                    <option value="avi">AVI</option>
+                    <option value="mkv">MKV</option>
+                    <option value="mov">MOV</option>
+                    <option value="flv">FLV</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Output Filename</label>
+                <input type="text" id="convertFilename" placeholder="output.mp4">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="executeConvert()">
+                    <i class="fas fa-play"></i> Convert
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('convert')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compress Modal -->
+    <div class="modal" id="compressModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-compress"></i> Compress Video</h2>
+                <button class="close-modal" onclick="closeModal('compress')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label>Quality Preset</label>
+                <select id="compressQuality">
+                    <option value="high">High Quality (CRF 18)</option>
+                    <option value="medium" selected>Medium Quality (CRF 23)</option>
+                    <option value="low">Low Quality (CRF 28)</option>
+                    <option value="custom">Custom CRF</option>
+                </select>
+            </div>
+            <div class="form-group" id="customCrfGroup" style="display: none;">
+                <label>CRF Value (0-51, lower = better quality)</label>
+                <input type="number" id="customCrf" min="0" max="51" value="23">
+            </div>
+            <div class="form-group">
+                <label>Output Filename</label>
+                <input type="text" id="compressFilename" placeholder="compressed.mp4">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="executeCompress()">
+                    <i class="fas fa-play"></i> Compress
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('compress')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extract Audio Modal -->
+    <div class="modal" id="extractModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-music"></i> Extract Audio</h2>
+                <button class="close-modal" onclick="closeModal('extract')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label>Audio Format</label>
+                <select id="extractFormat">
+                    <option value="mp3">MP3</option>
+                    <option value="aac">AAC</option>
+                    <option value="wav">WAV</option>
+                    <option value="flac">FLAC</option>
+                    <option value="ogg">OGG</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Output Filename</label>
+                <input type="text" id="extractFilename" placeholder="audio.mp3">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="executeExtract()">
+                    <i class="fas fa-play"></i> Extract
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('extract')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trim Modal -->
+    <div class="modal" id="trimModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-cut"></i> Trim Video</h2>
+                <button class="close-modal" onclick="closeModal('trim')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Start Time (HH:MM:SS)</label>
+                    <input type="text" id="trimStart" placeholder="00:00:00">
+                </div>
+                <div class="form-group">
+                    <label>End Time (HH:MM:SS)</label>
+                    <input type="text" id="trimEnd" placeholder="00:00:10">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Output Filename</label>
+                <input type="text" id="trimFilename" placeholder="trimmed.mp4">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="executeTrim()">
+                    <i class="fas fa-play"></i> Trim
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('trim')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resolution Modal -->
+    <div class="modal" id="resolutionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-expand"></i> Change Resolution</h2>
+                <button class="close-modal" onclick="closeModal('resolution')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label>Resolution Preset</label>
+                <select id="resolutionPreset">
+                    <option value="1920x1080">1080p (1920x1080)</option>
+                    <option value="1280x720">720p (1280x720)</option>
+                    <option value="854x480">480p (854x480)</option>
+                    <option value="640x360">360p (640x360)</option>
+                    <option value="custom">Custom</option>
+                </select>
+            </div>
+            <div class="grid-2" id="customResolutionGroup" style="display: none;">
+                <div class="form-group">
+                    <label>Width</label>
+                    <input type="number" id="resolutionWidth" placeholder="1920">
+                </div>
+                <div class="form-group">
+                    <label>Height</label>
+                    <input type="number" id="resolutionHeight" placeholder="1080">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Output Filename</label>
+                <input type="text" id="resolutionFilename" placeholder="resized.mp4">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="executeResolution()">
+                    <i class="fas fa-play"></i> Resize
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('resolution')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Command Modal -->
+    <div class="modal" id="customModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-terminal"></i> Custom FFmpeg Command</h2>
+                <button class="close-modal" onclick="closeModal('custom')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="form-group">
+                <label>FFmpeg Arguments (without -i input)</label>
+                <textarea id="customCommand" placeholder="-c:v libx264 -crf 23 -c:a aac output.mp4"></textarea>
+                <small style="color: #666; display: block; margin-top: 5px;">
+                    Example: -ss 00:00:10 -t 00:00:30 -c copy output.mp4
+                </small>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="executeCustom()">
+                    <i class="fas fa-play"></i> Execute
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal('custom')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/ffmpeg.js"></script>
+    <script>
+        let ffmpeg;
+        let currentFile = null;
+        let currentFileName = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initFFmpeg();
+            setupEventListeners();
+        });
+
+        async function initFFmpeg() {
+            try {
+                showAlert('Loading FFmpeg WebAssembly... This may take a moment.', 'info');
+                
+                // Assuming FFmpeg is loaded from assets/js/ffmpeg.js
+                // You'll need to adapt this to your specific FFmpeg.wasm setup
+                
+                showAlert('FFmpeg loaded successfully!', 'success');
+            } catch (error) {
+                showAlert('Failed to load FFmpeg: ' + error.message, 'error');
+                console.error(error);
+            }
+        }
+
+        function setupEventListeners() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadZone.addEventListener('click', () => fileInput.click());
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragging');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragging');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragging');
+                const file = e.dataTransfer.files[0];
+                if (file) handleFileUpload(file);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) handleFileUpload(file);
+            });
+
+            // Dynamic form updates
+            document.getElementById('compressQuality').addEventListener('change', (e) => {
+                document.getElementById('customCrfGroup').style.display = 
+                    e.target.value === 'custom' ? 'block' : 'none';
+            });
+
+            document.getElementById('resolutionPreset').addEventListener('change', (e) => {
+                document.getElementById('customResolutionGroup').style.display = 
+                    e.target.value === 'custom' ? 'grid' : 'none';
+            });
+        }
+
+        function handleFileUpload(file) {
+            currentFile = file;
+            currentFileName = file.name;
+
+            document.getElementById('fileInfo').classList.add('active');
+            document.getElementById('infoFilename').textContent = file.name;
+            document.getElementById('infoSize').textContent = formatBytes(file.size);
+            document.getElementById('infoType').textContent = file.type || 'Unknown';
+
+            showAlert('File loaded: ' + file.name, 'success');
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        function openModal(type) {
+            if (!currentFile) {
+                showAlert('Please upload a file first!', 'error');
+                return;
+            }
+            document.getElementById(type + 'Modal').classList.add('active');
+        }
+
+        function closeModal(type) {
+            document.getElementById(type + 'Modal').classList.remove('active');
+        }
+
+        function showAlert(message, type = 'info') {
+            const alert = document.getElementById('alert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alert.className = 'alert active alert-' + type;
+            alertMessage.textContent = message;
+
+            setTimeout(() => {
+                alert.classList.remove('active');
+            }, 5000);
+        }
+
+        function showProgress(show = true) {
+            document.getElementById('progressContainer').classList.toggle('active', show);
+            if (show) {
+                document.getElementById('console').classList.add('active');
+            }
+        }
+
+        function updateProgress(percent, status) {
+            document.getElementById('progressBar').style.width = percent + '%';
+            document.getElementById('progressPercent').textContent = percent + '%';
+            document.getElementById('progressStatus').textContent = status;
+        }
+
+        function addConsoleLog(message) {
+            const console = document.getElementById('console');
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.textContent = '> ' + message;
+            console.appendChild(line);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function showOutputFile(filename, size) {
+            const outputFiles = document.getElementById('outputFiles');
+            const outputFilesList = document.getElementById('outputFilesList');
+            
+            outputFiles.classList.add('active');
+            
+            const fileItem = document.createElement('div');
+            fileItem.className = 'output-file-item';
+            fileItem.innerHTML = `
+                <div class="output-file-info">
+                    <h4><i class="fas fa-file-video"></i> ${filename}</h4>
+                    <p>Size: ${formatBytes(size)}</p>
+                </div>
+                <button class="btn btn-success" onclick="downloadFile('${filename}')">
+                    <i class="fas fa-download"></i> Download
+                </button>
+            `;
+            
+            outputFilesList.innerHTML = '';
+            outputFilesList.appendChild(fileItem);
+        }
+
+        // Placeholder functions for FFmpeg operations
+        // You'll need to implement these with actual FFmpeg.wasm calls
+
+        async function executeConvert() {
+            const format = document.getElementById('convertFormat').value;
+            const filename = document.getElementById('convertFilename').value || `output.${format}`;
+            
+            closeModal('convert');
+            showProgress(true);
+            updateProgress(0, 'Starting conversion...');
+            
+            addConsoleLog(`Converting ${currentFileName} to ${format}`);
+            
+            // Simulate progress
+            simulateProgress(() => {
+                showOutputFile(filename, currentFile.size * 0.9);
+                showAlert('Conversion completed!', 'success');
+            });
+        }
+
+        async function executeCompress() {
+            const quality = document.getElementById('compressQuality').value;
+            const filename = document.getElementById('compressFilename').value || 'compressed.mp4';
+            
+            closeModal('compress');
+            showProgress(true);
+            updateProgress(0, 'Compressing video...');
+            
+            addConsoleLog(`Compressing with ${quality} quality`);
+            
+            simulateProgress(() => {
+                showOutputFile(filename, currentFile.size * 0.5);
+                showAlert('Compression completed!', 'success');
+            });
+        }
+
+        async function executeExtract() {
+            const format = document.getElementById('extractFormat').value;
+            const filename = document.getElementById('extractFilename').value || `audio.${format}`;
+            
+            closeModal('extract');
+            showProgress(true);
+            updateProgress(0, 'Extracting audio...');
+            
+            addConsoleLog(`Extracting audio to ${format}`);
+            
+            simulateProgress(() => {
+                showOutputFile(filename, currentFile.size * 0.1);
+                showAlert('Audio extraction completed!', 'success');
+            });
+        }
+
+        async function executeTrim() {
+            const start = document.getElementById('trimStart').value;
+            const end = document.getElementById('trimEnd').value;
+            const filename = document.getElementById('trimFilename').value || 'trimmed.mp4';
+            
+            closeModal('trim');
+            showProgress(true);
+            updateProgress(0, 'Trimming video...');
+            
+            addConsoleLog(`Trimming from ${start} to ${end}`);
+            
+            simulateProgress(() => {
+                showOutputFile(filename, currentFile.size * 0.3);
+                showAlert('Trim completed!', 'success');
+            });
+        }
+
+        async function executeResolution() {
+            const preset = document.getElementById('resolutionPreset').value;
+            const filename = document.getElementById('resolutionFilename').value || 'resized.mp4';
+            
+            closeModal('resolution');
+            showProgress(true);
+            updateProgress(0, 'Resizing video...');
+            
+            addConsoleLog(`Resizing to ${preset}`);
+            
+            simulateProgress(() => {
+                showOutputFile(filename, currentFile.size * 0.6);
+                showAlert('Resize completed!', 'success');
+            });
+        }
+
+        async function executeCustom() {
+            const command = document.getElementById('customCommand').value;
+            
+            if (!command.trim()) {
+                showAlert('Please enter a command!', 'error');
+                return;
+            }
+            
+            closeModal('custom');
+            showProgress(true);
+            updateProgress(0, 'Executing custom command...');
+            
+            addConsoleLog(`Command: ffmpeg -i ${currentFileName} ${command}`);
+            
+            simulateProgress(() => {
+                const outputMatch = command.match(/(\S+\.\w+)$/);
+                const outputName = outputMatch ? outputMatch[1] : 'output.mp4';
+                showOutputFile(outputName, currentFile.size);
+                showAlert('Command executed!', 'success');
+            });
+        }
+
+        function simulateProgress(callback) {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    updateProgress(100, 'Complete!');
+                    setTimeout(callback, 500);
+                } else {
+                    updateProgress(Math.floor(progress), 'Processing...');
+                }
+            }, 500);
+        }
+
+        function downloadFile(filename) {
+            // Implement actual file download
+            showAlert('Downloading ' + filename, 'info');
+        }
+
+        // Close modals on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

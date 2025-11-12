@@ -82,6 +82,7 @@ func (s *Server) setupRoutes() {
 	s.router.HandleFunc("/stream/{token}", s.handleStream).Methods("GET")
 	s.router.HandleFunc("/play", s.handleStreamPage).Methods("GET")
 	s.router.HandleFunc("/", s.handleHome).Methods("GET")
+	s.router.HandleFunc("/ffmpeg", s.handleFFmpeg).Methods("GET")
 	s.router.HandleFunc("/tv/{id:[0-9]+}", s.handleTVPage).Methods("GET")
 	s.router.HandleFunc("/movie/{id:[0-9]+}", s.handleMoviePage).Methods("GET")
 	s.router.HandleFunc("/search", s.handleSearchPage).Methods("GET")

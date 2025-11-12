@@ -212,6 +212,9 @@ func StreamMediaChunks(chatID int64, messageID int, startChunk int64, callback f
 		cancel()
 
 		if err != nil {
+			if handleIfFlood(err) {
+				continue
+			}
 			currentRetries++
 			if currentRetries > maxRetries {
 				return fmt.Errorf("telegram fetch failed after %d retries at offset %d: %w", maxRetries, offset, err)
@@ -253,4 +256,15 @@ func StreamMediaChunks(chatID int64, messageID int, startChunk int64, callback f
 	}
 
 	return nil
+}
+
+func handleIfFlood(err error) bool {
+	if tg.MatchError(err, "FLOOD_WAIT_") || tg.MatchError(err, "FLOOD_PREMIUM_WAIT_") {
+		if waitTime := tg.GetFloodWait(err); waitTime > 0 {
+			time.Sleep(time.Duration(waitTime) * time.Second)
+			return true
+		}
+	}
+
+	return false
 }

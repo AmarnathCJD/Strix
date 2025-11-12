@@ -493,6 +493,10 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "index.html")
 }
 
+func (s *Server) handleFFmpeg(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "ffmpeg.html")
+}
+
 func (s *Server) handleTVPage(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]

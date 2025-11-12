@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -189,25 +189,7 @@ func isVideoFile(filename string) bool {
 	ext := strings.ToLower(filepath.Ext(filename))
 	videoExts := []string{".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm", ".m4v"}
 
-	for _, validExt := range videoExts {
-		if ext == validExt {
-			return true
-		}
-	}
-	return false
-}
-
-func formatBytes(bytes int64) string {
-	const unit = 1024
-	if bytes < unit {
-		return fmt.Sprintf("%d B", bytes)
-	}
-	div, exp := int64(unit), 0
-	for n := bytes / unit; n >= unit; n /= unit {
-		div *= unit
-		exp++
-	}
-	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+	return slices.Contains(videoExts, ext)
 }
 
 func extractCodec(filename string) string {
